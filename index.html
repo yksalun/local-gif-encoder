@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Local GIF Encoder — Zero-Dependency Browser Photo to GIF Demo</title>
+  <meta name="description" content="Encode animated GIF89a files from photos directly inside your browser using zero-dependency JavaScript. No server uploads, no watermarks, MIT licensed." />
+  <link rel="canonical" href="https://yksalun.github.io/local-gif-encoder/" />
+  <meta property="og:title" content="Local GIF Encoder — Browser Photo to GIF Demo (Zero Upload)" />
+  <meta property="og:description" content="Zero-dependency GIF89a encoder with Floyd-Steinberg dithering and LZW compression running 100% in your browser." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://yksalun.github.io/local-gif-encoder/" />
+  <style>
+    :root {
+      --bg: #121110;
+      --surface: #1b1917;
+      --surface-2: #24211e;
+      --border: rgba(231, 186, 150, 0.22);
+      --text: #f5f1eb;
+      --muted: #b3aaa0;
+      --accent: #e7ba96;
+      --accent-strong: #f0c9a8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+      background: radial-gradient(circle at top right, rgba(231,186,150,0.09), transparent 45%), var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .wrap { max-width: 960px; margin: 0 auto; padding: 40px 20px 72px; }
+    header { margin-bottom: 32px; }
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(231,186,150,0.1);
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    h1 { font-size: clamp(1.9rem, 4vw, 2.8rem); line-height: 1.15; margin: 14px 0 12px; }
+    .lead { color: var(--muted); font-size: 1.06rem; max-width: 720px; margin: 0; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin: 18px 0;
+    }
+    label { display: flex; flex-direction: column; gap: 6px; font-size: 0.9rem; color: var(--muted); }
+    input[type="number"], select {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      padding: 9px 12px;
+      font-size: 0.95rem;
+    }
+    .check-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 24px;
+      color: var(--text);
+      flex-direction: row;
+    }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
+    button, .btn-link {
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    button.primary {
+      background: var(--accent);
+      color: #161311;
+      border-color: var(--accent);
+    }
+    button.primary:hover { background: var(--accent-strong); }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    .dropzone {
+      border: 1.5px dashed var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      text-align: center;
+      background: rgba(255,255,255,0.02);
+    }
+    .thumbs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .thumbs img {
+      width: 84px;
+      height: 84px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .output {
+      margin-top: 20px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+    .output img {
+      max-width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #0b0a09;
+    }
+    .meta { font-size: 0.9rem; color: var(--muted); }
+    a { color: var(--accent); }
+    a:hover { color: var(--accent-strong); }
+    h2 { font-size: 1.35rem; margin-top: 0; }
+    pre {
+      background: #0d0c0b;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      overflow-x: auto;
+      font-size: 0.88rem;
+      color: #e9dfd4;
+    }
+    .callout {
+      border-left: 3px solid var(--accent);
+      background: rgba(231,186,150,0.07);
+      padding: 16px 20px;
+      border-radius: 0 12px 12px 0;
+      margin: 20px 0;
+    }
+    footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      font-size: 0.9rem;
+      color: var(--muted);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 12px;
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <span class="badge">MIT Open Source · Zero Dependency · 100% Local</span>
+      <h1>Local Browser GIF89a Encoder</h1>
+      <p class="lead">
+        A minimal, zero-dependency JavaScript library for turning photos or Canvas frames into animated GIFs
+        directly inside the user's browser — no server uploads, no FFmpeg WASM bundle, and no watermarks.
+      </p>
+    </header>
+
+    <section class="card" aria-labelledby="demo-heading">
+      <h2 id="demo-heading">Interactive On-Device Photo to GIF Demo</h2>
+      <div class="dropzone">
+        <p style="margin:0 0 12px;color:var(--muted);">
+          Pick 2–12 JPEG, PNG, or WebP images from your device (everything stays in browser memory),
+          or load 3 generated demo frames to test instantly.
+        </p>
+        <input id="fileInput" type="file" accept="image/*" multiple style="display:none" />
+        <div class="btn-row" style="justify-content:center;margin-top:8px;">
+          <button type="button" id="pickBtn">Choose Photos</button>
+          <button type="button" id="sampleBtn">Load 3 Sample Frames</button>
+          <button type="button" id="clearBtn">Clear</button>
+        </div>
+      </div>
+
+      <div id="thumbs" class="thumbs" aria-live="polite"></div>
+
+      <div class="controls">
+        <label>
+          Frame delay (ms)
+          <input id="delayInput" type="number" min="50" max="5000" step="50" value="450" />
+        </label>
+        <label>
+          Output width (px)
+          <input id="widthInput" type="number" min="120" max="800" step="20" value="360" />
+        </label>
+        <label>
+          Loop count (0 = forever)
+          <input id="loopInput" type="number" min="0" max="50" value="0" />
+        </label>
+        <label class="check-row">
+          <input id="ditherInput" type="checkbox" checked />
+          Floyd-Steinberg dithering
+        </label>
+      </div>
+
+      <div class="btn-row">
+        <button type="button" id="encodeBtn" class="primary" disabled>Encode GIF Locally</button>
+        <a id="downloadLink" class="btn-link" download="local-animation.gif" style="display:none;">Download GIF</a>
+      </div>
+
+      <div id="status" class="meta" style="margin-top:12px;">Add at least 1 photo or click "Load 3 Sample Frames" to start.</div>
+      <div id="output" class="output"></div>
+    </section>
+
+    <section class="card">
+      <h2>Need More Editing Controls Without Uploading Photos?</h2>
+      <div class="callout">
+        This repository keeps the core GIF89a encoder tiny (~250 lines) for developers learning or embedding local GIF export.
+        If you want a full-featured, watermark-free web studio with per-frame timing, reverse &amp; ping-pong playback,
+        crossfade transitions, custom canvas aspect ratios, and drag-to-reorder frames — still 100% on-device with zero uploads —
+        try the free <a href="https://liofx.com/photo-to-gif">Liofx Photo to GIF converter</a>.
+      </div>
+      <p style="color:var(--muted);margin-bottom:0;">
+        Liofx also offers <a href="https://liofx.com/free-tools">15 free on-device creative tools</a> (including
+        Video to GIF, Live Photo Maker, Image Resizer, and Image Compressor) alongside cloud AI tools like
+        <a href="https://liofx.com/photo-to-sketch">Photo to Sketch</a> and
+        <a href="https://liofx.com/clay-animation">Clay Animation</a>.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>How the Encoder Works in Plain JavaScript</h2>
+      <ol style="color:var(--muted);padding-left:20px;">
+        <li><strong>Canvas normalization</strong>: Each source image is scaled cleanly onto an offscreen HTML5 Canvas so every frame shares exact width and height dimensions.</li>
+        <li><strong>256-color quantization</strong>: Pixels are mapped to a balanced 216-color RGB cube plus a 40-step grayscale ramp, with optional Floyd-Steinberg error diffusion for smoother gradients.</li>
+        <li><strong>Variable-width LZW compression</strong>: Encodes 8-bit palette indices into standard GIF89a sub-blocks with dynamic dictionary reset at 4,096 codes.</li>
+        <li><strong>Zero network transfer</strong>: Output bytes become a local <code>Blob</code> URL in RAM — ideal for privacy-sensitive workflows and offline PWAs.</li>
+      </ol>
+      <pre><code>import { encodeGif } from './src/gif-encoder.js';
+
+const gifBytes = encodeGif(
+  [
+    { rgba: frame1ImageData.data, delayMs: 400 },
+    { rgba: frame2ImageData.data, delayMs: 400 },
+  ],
+  { width: 360, height: 240, loop: 0, dither: true }
+);
+
+const blobUrl = URL.createObjectURL(new Blob([gifBytes], { type: 'image/gif' }));</code></pre>
+    </section>
+
+    <footer>
+      <span>
+        Source code on <a href="https://github.com/yksalun/local-gif-encoder">GitHub (yksalun/local-gif-encoder)</a> · MIT License
+      </span>
+      <span>
+        Full web app: <a href="https://liofx.com/photo-to-gif">Photo to GIF Converter on Liofx</a>
+      </span>
+    </footer>
+  </main>
+
+  <script type="module">
+    import { encodeGif } from './src/gif-encoder.js';
+
+    const fileInput = document.getElementById('fileInput');
+    const pickBtn = document.getElementById('pickBtn');
+    const sampleBtn = document.getElementById('sampleBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const encodeBtn = document.getElementById('encodeBtn');
+    const downloadLink = document.getElementById('downloadLink');
+    const thumbs = document.getElementById('thumbs');
+    const statusEl = document.getElementById('status');
+    const outputEl = document.getElementById('output');
+
+    let loadedBitmaps = [];
+    let activeBlobUrl = null;
+
+    function refreshThumbs() {
+      thumbs.innerHTML = '';
+      for (const item of loadedBitmaps) {
+        const img = document.createElement('img');
+        img.src = item.previewUrl;
+        img.alt = item.name;
+        thumbs.appendChild(img);
+      }
+      encodeBtn.disabled = loadedBitmaps.length === 0;
+      statusEl.textContent = loadedBitmaps.length
+        ? `${loadedBitmaps.length} frame(s) ready in browser memory. Click "Encode GIF Locally".`
+        : 'Add at least 1 photo or click "Load 3 Sample Frames" to start.';
+    }
+
+    pickBtn.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files || []).slice(0, 12);
+      for (const file of files) {
+        const previewUrl = URL.createObjectURL(file);
+        const img = new Image();
+        img.src = previewUrl;
+        await img.decode();
+        loadedBitmaps.push({ name: file.name, img, previewUrl });
+      }
+      fileInput.value = '';
+      refreshThumbs();
+    });
+
+    sampleBtn.addEventListener('click', async () => {
+      loadedBitmaps = [];
+      const specs = [
+        { bg: '#201c19', fg: '#e7ba96', title: 'Frame 1', sub: '100% Local Canvas' },
+        { bg: '#18242e', fg: '#8ecae6', title: 'Frame 2', sub: 'Zero Uploads' },
+        { bg: '#231d2b', fg: '#cdb4db', title: 'Frame 3', sub: 'GIF89a + LZW' },
+      ];
+      for (const s of specs) {
+        const c = document.createElement('canvas');
+        c.width = 480;
+        c.height = 300;
+        const ctx = c.getContext('2d');
+        ctx.fillStyle = s.bg;
+        ctx.fillRect(0, 0, 480, 300);
+        ctx.strokeStyle = s.fg;
+        ctx.lineWidth = 4;
+        ctx.strokeRect(20, 20, 440, 260);
+        ctx.fillStyle = s.fg;
+        ctx.font = 'bold 48px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(s.title, 240, 145);
+        ctx.fillStyle = '#f5f1eb';
+        ctx.font = '24px system-ui, sans-serif';
+        ctx.fillText(s.sub, 240, 195);
+        const dataUrl = c.toDataURL('image/png');
+        const img = new Image();
+        img.src = dataUrl;
+        await img.decode();
+        loadedBitmaps.push({ name: s.title, img, previewUrl: dataUrl });
+      }
+      refreshThumbs();
+    });
+
+    clearBtn.addEventListener('click', () => {
+      loadedBitmaps = [];
+      outputEl.innerHTML = '';
+      downloadLink.style.display = 'none';
+      refreshThumbs();
+    });
+
+    encodeBtn.addEventListener('click', () => {
+      if (!loadedBitmaps.length) return;
+      const delayMs = Math.max(50, Number(document.getElementById('delayInput').value) || 450);
+      const targetW = Math.max(120, Math.min(800, Number(document.getElementById('widthInput').value) || 360));
+      const loop = Math.max(0, Number(document.getElementById('loopInput').value) || 0);
+      const dither = document.getElementById('ditherInput').checked;
+
+      const first = loadedBitmaps[0].img;
+      const targetH = Math.max(80, Math.round((first.naturalHeight / first.naturalWidth) * targetW));
+
+      const t0 = performance.now();
+      const canvas = document.createElement('canvas');
+      canvas.width = targetW;
+      canvas.height = targetH;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+      const frames = loadedBitmaps.map(({ img }) => {
+        ctx.fillStyle = '#121110';
+        ctx.fillRect(0, 0, targetW, targetH);
+        const scale = Math.min(targetW / img.naturalWidth, targetH / img.naturalHeight);
+        const dw = Math.round(img.naturalWidth * scale);
+        const dh = Math.round(img.naturalHeight * scale);
+        const dx = Math.round((targetW - dw) / 2);
+        const dy = Math.round((targetH - dh) / 2);
+        ctx.drawImage(img, dx, dy, dw, dh);
+        return { rgba: ctx.getImageData(0, 0, targetW, targetH).data, delayMs };
+      });
+
+      const bytes = encodeGif(frames, { width: targetW, height: targetH, defaultDelayMs: delayMs, loop, dither });
+      const elapsed = Math.round(performance.now() - t0);
+
+      if (activeBlobUrl) URL.revokeObjectURL(activeBlobUrl);
+      activeBlobUrl = URL.createObjectURL(new Blob([bytes], { type: 'image/gif' }));
+
+      outputEl.innerHTML = '';
+      const preview = document.createElement('img');
+      preview.src = activeBlobUrl;
+      preview.alt = 'Encoded local GIF preview';
+      outputEl.appendChild(preview);
+
+      downloadLink.href = activeBlobUrl;
+      downloadLink.style.display = 'inline-flex';
+      statusEl.textContent = `Encoded ${frames.length} frames (${targetW}×${targetH}) into ${(bytes.length / 1024).toFixed(1)} KB GIF89a in ${elapsed} ms — zero network requests.`;
+    });
+  </script>
+</body>
+</html>

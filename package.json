@@ -1,0 +1,29 @@
+{
+  "name": "local-gif-encoder",
+  "version": "1.0.0",
+  "description": "Zero-dependency browser and Node.js GIF89a encoder for private, on-device photo-to-GIF workflows.",
+  "type": "module",
+  "main": "./src/gif-encoder.js",
+  "exports": {
+    ".": "./src/gif-encoder.js"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
+  "keywords": [
+    "gif",
+    "gif-encoder",
+    "photo-to-gif",
+    "browser",
+    "canvas",
+    "lzw",
+    "local-first",
+    "zero-dependency"
+  ],
+  "license": "MIT",
+  "homepage": "https://yksalun.github.io/local-gif-encoder/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yksalun/local-gif-encoder.git"
+  }
+}
